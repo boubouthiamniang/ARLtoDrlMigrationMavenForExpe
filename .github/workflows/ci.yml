@@ -43,3 +43,7 @@ jobs:
         uses: green-coding-solutions/eco-ci-energy-estimation@v3 # use hash or @vX here (See note below)
         with:
           task: display-results
+
+      - name: Excecute test
+        run: |
+          mvn test
