@@ -5,7 +5,7 @@ FROM adoptopenjdk:11-jre-hotspot
 WORKDIR /app
 
 # Copy the compiled Java application JAR file into the container
-COPY target/arl-to-drl-java.jar.jar /app/arl-to-drl-java.jar.jar
+COPY target/arl-to-drl-migration-maven-1.0-SNAPSHOT.jar /app/arl-to-drl-migration-maven-1.0-SNAPSHOT.jar
 
 # Command to run the Java application
-CMD ["java", "-jar", "arl-to-drl-java.jar"]
+CMD ["java", "-jar", "arl-to-drl-migration-maven-1.0-SNAPSHOT.jar"]
