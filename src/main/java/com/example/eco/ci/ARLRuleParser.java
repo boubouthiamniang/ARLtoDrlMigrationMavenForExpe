@@ -3,13 +3,41 @@ package com.example.eco.ci;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.io.IOException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ARLRuleParser {
+
+    public static List<String> getListOfFilesPathsForExtension(String directoryPath, String typeFilter) {
+        List<String> arlFilePaths = new ArrayList<>();
+        Path dirPath = Paths.get(directoryPath);
+
+        // Filter for ARL files
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(dirPath, typeFilter)) {
+            for (Path entry : stream) {
+                arlFilePaths.add(entry.toString()); 
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return arlFilePaths;
+    }
+
+    public static String readARLFileToString (String filePath) {
+        try {
+            return new String(Files.readAllBytes(Paths.get(filePath)));
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "";
+        }
+    }
 
     public static Map<String, String> parseARLRule(String ruleText) {
         // Regular expressions for extracting rule components
@@ -56,9 +84,9 @@ public class ARLRuleParser {
         );
 
         String drlRule = String.format(
-            "dialect  \"mvel\"\n"+
+            "dialect  \"mvel\"\n\n"+
             "rule \"%s\"\n" +
-            "    salience %s\n" +
+            "salience %s\n" +
             "when\n" +
             "    %s\n" +
             "then\n" +
@@ -73,6 +101,15 @@ public class ARLRuleParser {
         return drlRule;
     }
 
+    public static String getFileNameFromParsedRuleMap (Map<String, String> parsedRule) {
+        for (Map.Entry<String, String> entry : parsedRule.entrySet()) {
+            if (entry.getKey().equals("name")) {
+                return entry.getValue();
+            }
+        }
+        return "unamed.drl";
+    }
+    
     public static void writeDRLStringToFile (String drlRuleStr, String filePath) {
         try {
             // Convert the file path string to a Path object
@@ -92,38 +129,34 @@ public class ARLRuleParser {
         }
     }
 
+    public static void generateDRLFilesFromARLs () {
+        //List of arl file path
+        List<String> arlFilePaths = getListOfFilesPathsForExtension("C:\\Users\\boubouthiam.niang\\workspace\\bl\\rbms\\ODM\\Demo\\règles", "*.arl");
+
+        //For each arl file
+        for(String arlFilePath: arlFilePaths) {
+             //Read the arl file
+            String arlRule = readARLFileToString(arlFilePath);
+
+            // Parsing the ARL rule
+            Map<String, String> parsedRule = parseARLRule(arlRule);
+
+            // Converting to DRL format
+            String drlRule = convertARLToDRL(parsedRule);
+
+            // The path to the file
+            String fileName = getFileNameFromParsedRuleMap(parsedRule);
+            
+            //Construct target path
+            String filePath = "C:\\Users\\boubouthiam.niang\\workspace\\bl\\rbms\\migration\\odmtodroolsbis\\src\\main\\resources\\rules\\"+fileName+".drl";
+            
+            //Write to drl file
+            writeDRLStringToFile(drlRule, filePath);
+        }
+    }
+
     public static void main(String[] args) {
-
-        // Example ARL rule string
-        String arlRule = 
-            "rule `New customer and a big spender at bithday offer` {\n" +
-            "  property priority = 8;\n" +
-            "  effectiveDate = new java.util.Date(\"6/20/2024 0:00 +0200\");\n" +
-            "  expirationDate = new java.util.Date(\"6/23/2024 0:00 +0200\");\n" +
-            "  ilog.rules.business_name = \"rule one\";\n" +
-            "  ilog.rules.dt = \"\";\n" +
-            "  ilog.rules.package_name = \"\";\n" +
-            "  status = \"new\";\n" +
-            "  when {\n" +
-            "    com.bl.drools.demo.Customer() from $EngineData.this.customer;\n" +
-            "    evaluate ( $EngineData.this.customer.totalSpending >= 100);\n" +
-            "  }\n" +
-            "  then {\n" +
-            "    $EngineData.this.customer.discount = 5;\n" +
-            "  }\n" +
-            "}\n";
-
-        // The path to the file
-        String filePath = "C:\\Users\\boubouthiam.niang\\workspace\\bl\\rbms\\migration\\odmtodroolsbis\\src\\main\\resources\\rules\\rule.drl";
-
-        // Parsing the ARL rule
-        Map<String, String> parsedRule = parseARLRule(arlRule);
-
-        // Converting to DRL format
-        String drlRule = convertARLToDRL(parsedRule);
-
-        //Write to drl file
-        writeDRLStringToFile(drlRule, filePath);
+        generateDRLFilesFromARLs();
     }
 }
 
