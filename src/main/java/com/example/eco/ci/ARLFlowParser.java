@@ -27,10 +27,10 @@ public class ARLFlowParser {
 
         try {
             // Load the BRL file (which contains XML content)
-            File inputFile = new File("C:\\Users\\boubouthiam.niang\\workspace\\bl\\rbms\\ODM\\Demo\\règles\\Flow A.rfl");
+            File inputFlowFile = new File("C:\\Users\\boubouthiam.niang\\workspace\\bl\\rbms\\ODM\\Demo\\règles\\Flow A.rfl");
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-            Document doc = dBuilder.parse(inputFile);
+            Document doc = dBuilder.parse(inputFlowFile);
             doc.getDocumentElement().normalize();
 
             // Get all RuleTasks
@@ -83,7 +83,54 @@ public class ARLFlowParser {
         return ruleTaskMaps;
     }
 
+    public static String findBrlFilesWithUUID(String uuidToFind) {
+        String rulesDirectoryPath = "C:\\Users\\boubouthiam.niang\\workspace\\bl\\rbms\\ODM\\Demo\\règles\\";
+        final String[] pathOfFoundFile = {""}; // Use an array because lambda require final if simple String, but we need to assign new value
+
+        try {
+            // Create a Path object for the directory
+            Path directory = Paths.get(rulesDirectoryPath);
+
+            // Traverse the directory recursively
+            try (Stream<Path> paths = Files.walk(directory)) {
+                paths
+                    .filter(Files::isRegularFile) // Filter regular files
+                    .filter(path -> path.toString().endsWith(".brl")) // Filter BRL files
+                    .forEach(path -> {
+                        try {
+                            // Read the content of the file as a string
+                            String content = new String(Files.readAllBytes(path));
+
+                            // Check if the content contains the UUID
+                            String uuidValue = extractNodeValue(content, "<uuid>", "</uuid>");
+                            if (uuidValue.equals(uuidToFind)) {
+                                System.out.println("Found in file: " + path.toString());
+                                System.out.println("UUID value: " + uuidValue);
+
+                                // Extract the value of <name> node
+                                pathOfFoundFile[0] = path.toString();
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    });
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return pathOfFoundFile[0];
+    }
+
+    public static String transformBRLPathToARLPath(String brlPath) {
+        if (brlPath.endsWith(".brl")) {
+            brlPath = brlPath.substring(0, brlPath.length() - 4) + ".arl";
+        }
+        return brlPath; 
+    }
+
     public static String convertFlowToDRL(Map<String, String> rule, String salience) {
+        String agendaGroup = "\"FlowA\"";
         String conditions = rule.getOrDefault("conditions", "");
         String actions = rule.getOrDefault("actions", "");
 
@@ -105,14 +152,16 @@ public class ARLFlowParser {
 
         String drlRule = String.format(
             "rule \"%s\"\n" +
-            "salience %s\n" +
-            "when\n" +
-            "    %s\n" +
-            "then\n" +
-            "    %s\n" +
+            "   salience %s\n" +
+            "   agenda-group %s\n"+
+            "   when\n" +
+            "      %s\n" +
+            "   then\n" +
+            "      %s\n" +
             "end\n",
             rule.getOrDefault("name", ""),
             salience,
+            agendaGroup,
             conditions,
             actions
         );
@@ -120,56 +169,6 @@ public class ARLFlowParser {
         return drlRule;
     }
 
-    public static String findBrlFilesWithUUID(String uuidToFind) {
-        String directoryPath = "C:\\Users\\boubouthiam.niang\\workspace\\bl\\rbms\\ODM\\Demo\\règles\\";
-        final String[] pathOfFoundFile = {""}; // Use an array because lambda require final if simple String, but we need to assign new value
-
-        try {
-            // Create a Path object for the directory
-            Path directory = Paths.get(directoryPath);
-
-            // Traverse the directory recursively
-            try (Stream<Path> paths = Files.walk(directory)) {
-                paths
-                    .filter(Files::isRegularFile) // Filter regular files
-                    .filter(path -> path.toString().endsWith(".brl")) // Filter BRL files
-                    .forEach(path -> {
-                        try {
-                            // Read the content of the file as a string
-                            String content = new String(Files.readAllBytes(path));
-
-                            // Check if the content contains the UUID
-                            String uuidValue = extractNodeValue(content, "<uuid>", "</uuid>");
-                            if (uuidValue.equals(uuidToFind)) {
-                                System.out.println("Found in file: " + path.toString());
-                                System.out.println("UUID value: " + uuidValue);
-
-                                // Extract the value of <name> node
-                                pathOfFoundFile[0] = path.toString();
-                            }
-
-                          
-                            
-                            //System.out.println("Found in file: " + path.toString() + ", Name: " + ruleName);
-
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    });
-            }
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return pathOfFoundFile[0];
-    }
-
-    public static String transformBRLPathToARLPath(String brlPath) {
-        if (brlPath.endsWith(".brl")) {
-            brlPath = brlPath.substring(0, brlPath.length() - 4) + ".arl";
-        }
-        return brlPath; 
-    }
 
     //To add in utile class
     public static String extractNodeValue(String xmlContent, String nodeOpenName, String nodeCloseName) {
@@ -220,17 +219,15 @@ public class ARLFlowParser {
         }
 
         //Construct target path
-        String filePath = "C:\\Users\\boubouthiam.niang\\workspace\\bl\\rbms\\migration\\odmtodroolsbis\\src\\main\\resources\\rules\\"+"flowA"+".drl";
+        String flowDRLFilePath = "C:\\Users\\boubouthiam.niang\\workspace\\bl\\rbms\\migration\\workshop-demo\\src\\main\\resources\\flows\\"+"flowA"+".drl";
                             
         //Write to drl file
-        ARLRuleParser.writeDRLStringToFile(drlRule, filePath);
+        ARLRuleParser.writeDRLStringToFile(drlRule, flowDRLFilePath);
 
         System.out.println(ruleTaskMaps);
 
         String pathOfFoundFile = findBrlFilesWithUUID("8104d31b-327e-44b1-a29c-54736e393a99");
 
         System.out.println(pathOfFoundFile);
-
-        //String changedFile = transformBRLPathToARLPath("C:\Users\boubouthiam.niang\workspace\bl\rbms\ODM\Demo\règles\rule one.brl");
     }
 }

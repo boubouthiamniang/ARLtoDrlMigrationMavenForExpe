@@ -86,11 +86,11 @@ public class ARLRuleParser {
         String drlRule = String.format(
             "dialect  \"mvel\"\n\n"+
             "rule \"%s\"\n" +
-            "salience %s\n" +
-            "when\n" +
-            "    %s\n" +
-            "then\n" +
-            "    %s\n" +
+            "   salience %s\n" +
+            "   when\n" +
+            "       %s\n" +
+            "   then\n" +
+            "       %s\n" +
             "end\n",
             rule.getOrDefault("name", ""),
             salience,
@@ -121,10 +121,8 @@ public class ARLRuleParser {
             // Write the content to the file
             Files.write(path, drlRuleStr.getBytes());
             
-            // Print success message
             System.out.println("File written successfully.");
         } catch (IOException e) {
-            // Print the exception if an error occurs
             e.printStackTrace();
         }
     }
@@ -148,10 +146,10 @@ public class ARLRuleParser {
             String fileName = getFileNameFromParsedRuleMap(parsedRule);
             
             //Construct target path
-            String filePath = "C:\\Users\\boubouthiam.niang\\workspace\\bl\\rbms\\migration\\odmtodroolsbis\\src\\main\\resources\\rules\\"+fileName+".drl";
+            String drlFilePath = "C:\\Users\\boubouthiam.niang\\workspace\\bl\\rbms\\migration\\workshop-demo\\src\\main\\resources\\rules\\"+fileName+".drl";
             
             //Write to drl file
-            writeDRLStringToFile(drlRule, filePath);
+            writeDRLStringToFile(drlRule, drlFilePath);
         }
     }
 
